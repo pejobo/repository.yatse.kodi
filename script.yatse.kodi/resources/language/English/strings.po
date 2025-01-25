@@ -70,3 +70,11 @@ msgstr ""
 msgctxt "#32101"
 msgid "Preferred YoutubeDL format"
 msgstr ""
+
+msgctxt "#32102"
+msgid "s.to Mail"
+msgstr ""
+
+msgctxt "#32103"
+msgid "s.to Password"
+msgstr ""

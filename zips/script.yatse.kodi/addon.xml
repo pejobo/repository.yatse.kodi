@@ -1,8 +1,10 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<addon id="script.yatse.kodi" name="Yatse Kodi helper script" version="2.5.3" provider-name="Yatse">
+<addon id="script.yatse.kodi" name="Yatse Kodi helper script (fork)" version="2.6.4" provider-name="Yatse">
     <requires>
-        <import addon="xbmc.python" version="2.1.0"/>
-        <import addon="plugin.video.youtube"/>
+        <import addon="xbmc.python" version="3.0.0"/>
+        <import addon="plugin.video.youtube" optional="true"/>
+        <import addon="plugin.video.invidious" optional="true"/>
+        <import addon="script.module.resolveurl" optional="true"/>
     </requires>
     <extension point="xbmc.python.script" library="default.py">
         <provides>executable</provides>
@@ -17,7 +19,10 @@
         <description lang="fr">Script Yatse helper pour Kodi</description>
         <description lang="de">Yatse-Skript für Kodi</description>
         <platform>all</platform>
-        <news>2.5.3: Quick revert as YTDLP require Python 3.6 so Kodi 19 (This is version 2.4.5)
+        <news>2.6.4: fork by pejobo, add s.to support, use resolveurl if available
+2.6.1/2/3: Update Yt-dlp
+2.6.0: Added support for invidious as Youtube plugin
+2.5.0: Switch to Yt-dlp (YoutubeDL replacement)
 2.4.X: Update YoutubeDL
 2.4.0: Fix for Kodi 19 magnet sharing
 2.3.X: Update YoutubeDL

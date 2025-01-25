@@ -92,6 +92,29 @@ def resolve_with_youtube_dl(url, parameters, action):
     return False
 
 
+def resolve_serienstream(url):
+    email = utils.get_setting('stoMail')
+    pw = utils.get_setting('stoPW')
+    if not email or not pw:
+        raise Exception('no login data for s.to provided in settings')
+    headers={
+        'X-Requested-With': 'XMLHttpRequest',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:88.0) Gecko/20100101 Firefox/88.0',
+        'Accept-Language': 'de,en-US;q=0.7,en;q=0.3',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+        'Accept-Encoding': 'gzip, deflate',
+        'Upgrade-Insecure-Requests': '1'
+    }
+    session = requests.Session()
+    parts = url.split('/')
+    session.post(parts[0] + '//' + parts[2] + '/login', headers=headers, data={'email': email, 'password': pw}).raise_for_status()
+    r = session.get(url, headers=headers)
+    r.raise_for_status()
+    if url == r.url:
+        raise Exception('redirect for %s could not be resolved' % url)
+    return r.url
+
+
 def handle_unresolved_url(data, action):
     url = unquote(data)
     logger.info(u'Trying to resolve URL (%s): %s' % (action, url))
@@ -122,24 +145,34 @@ def handle_unresolved_url(data, action):
                     utils.play_url('plugin://plugin.video.invidious/?action=play_video&video_id=%s' % video_id, action)
                     return
 
-    media_filter = utils.get_setting('YoutubeDLCustomMediaFilter')
-    if utils.get_setting('useYoutubeDLCustomFilter') == 'true' and media_filter:
-        logger.info(u'Trying to resolve with YoutubeDL (Preferred YoutubeDL media format filter: %s)' % (media_filter) )
-        result = resolve_with_youtube_dl(url, {'format': media_filter, 'no_color': 'true', 'ignoreerrors': 'true'}, action)
+    if ('://s.to' in url or '://serien.sx' in url or '://serienstream.' in url or '://186.2.175.5/' in url) and '/redirect/' in url:
+        xbmc.log(u'resolve serienstream redirect', xbmc.LOGINFO)
+        try:
+            url = resolve_serienstream(url)
+        except Exception as e:
+            xbmc.log(u'failure - ' + str(e), xbmc.LOGINFO)
     else:
-        logger.info(u'Trying to resolve with YoutubeDL (Default Setting)')
-        result = resolve_with_youtube_dl(url, {'format': 'best', 'no_color': 'true', 'ignoreerrors': 'true'}, action)
-    if result:
-        return
+        media_filter = utils.get_setting('YoutubeDLCustomMediaFilter')
+        if utils.get_setting('useYoutubeDLCustomFilter') == 'true' and media_filter:
+           logger.info(u'Trying to resolve with YoutubeDL (Preferred YoutubeDL media format filter: %s)' % (media_filter) )
+           result = resolve_with_youtube_dl(url, {'format': media_filter, 'no_color': 'true', 'ignoreerrors': 'true'}, action)
+        else:
+           logger.info(u'Trying to resolve with YoutubeDL (Default Setting)')
+           result = resolve_with_youtube_dl(url, {'format': 'best', 'no_color': 'true', 'ignoreerrors': 'true'}, action)
+        if result:
+           return
 
-    # Second pass with new params to fix site like reddit dash streams
-    logger.info(u'Trying to resolve with YoutubeDL other options')
-    result = resolve_with_youtube_dl(url, {'format': 'bestvideo+bestaudio/best', 'no_color': 'true', 'ignoreerrors': 'true'}, action)
-    if result:
-        return
-    logger.error(u'Url not resolved by YoutubeDL')
+    logger.info(u'use resolveurl')
+    try:
+       import resolveurl
+       resolved = resolveurl.resolve(url)
+       if resolved:
+          utils.play_url(resolved, action)
+          return
+    except ImportError:
+       xbmc.log(u'resolveurl not available', xbmc.LOGINFO)
 
-    logger.info(u'Trying to play as basic url')
+    xbmc.log(u'Trying to play as basic url', xbmc.LOGINFO)
     utils.play_url(url, action)
     if url:
         utils.show_error_notification(utils.translation(32006))

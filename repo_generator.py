@@ -10,7 +10,7 @@
 import re
 import os
 import shutil
-import md5
+import hashlib
 import zipfile
 
 class Generator:
@@ -30,7 +30,7 @@ class Generator:
 
         self._generate_addons_file()
         self._generate_md5_file()
-        print "Finished updating addons xml and md5 files"
+        print("Finished updating addons xml and md5 files")
 
     def Create_Zips(self,addon_id,version):
         xml_path     = os.path.join(addon_id,'addon.xml')
@@ -39,8 +39,10 @@ class Generator:
             os.makedirs(addon_folder)
 
         final_zip = os.path.join('zips',addon_id,'%s-%s.zip' % (addon_id,version))
-        if not os.path.exists(final_zip):
-            print "NEW ADD-ON - Creating zip for: %s v.%s" % (addon_id,version)
+        #if not os.path.exists(final_zip):
+        #    print("NEW ADD-ON - Creating zip for: %s v.%s" % (addon_id,version))
+        if True: 
+            print("Creating zip for: %s v.%s" % (addon_id,version))
             zip = zipfile.ZipFile(final_zip, 'w', compression=zipfile.ZIP_DEFLATED )
             root_len = len(os.path.dirname(os.path.abspath(addon_id)))
             for root, dirs, files in os.walk(addon_id):
@@ -69,17 +71,17 @@ class Generator:
                     if os.path.exists(py_file):
                         try:
                             os.remove(compiled)
-                            print"Removed compiled python file:"
-                            print compiled
-                            print'-----------------------------'
+                            print("Removed compiled python file:")
+                            print(compiled)
+                            print('-----------------------------')
                         except:
-                            print"Failed to remove compiled python file:"
-                            print compiled
-                            print'-----------------------------'
+                            print("Failed to remove compiled python file:")
+                            print(compiled)
+                            print('-----------------------------')
                     else:
-                        print"Compiled python file found but no matching .py file exists:"
-                        print compiled
-                        print'-----------------------------'
+                        print("Compiled python file found but no matching .py file exists:")
+                        print(compiled)
+                        print('-----------------------------')
 
 
     def _generate_addons_file(self):
@@ -91,7 +93,7 @@ class Generator:
 
 # loop thru and add each addons addon.xml file
         for addon in addons:
-            try:
+            #try:
                 if (not os.path.isdir(addon) or addon == "zips" or addon == "matrix" or addon.startswith('.')): continue
                 _path = os.path.join( addon, "addon.xml" )
                 xml_lines = open( _path, "r" ).read().splitlines()
@@ -104,31 +106,34 @@ class Generator:
                     if 'version="' in line and not ver_found:
                         version = re.compile('version="(.+?)"').findall(line)[0]
                         ver_found = True
-                    addon_xml += unicode( line.rstrip() + "\n", "utf-8")
+                    addon_xml += line.rstrip() + "\n"
                 addons_xml += addon_xml.rstrip() + "\n\n"
 
 # Create the zip files                
                 self.Create_Zips(addon,version)
 
-            except Exception, e:
-                print "Excluding %s for %s" % ( _path, e, )
+            #except Exception as e:
+            #    print("Excluding %s for %s" % ( _path, e, ))
 
 # clean and add closing tag
         addons_xml = addons_xml.strip() + u"\n</addons>\n"
-        self._save_file(addons_xml.encode( "utf-8" ), file=os.path.join('zips','addons.xml'))
+        self._save_file(addons_xml, file=os.path.join('zips','addons.xml'))
 
     def _generate_md5_file(self):
-        try:
-            m = md5.new(open(os.path.join('zips','addons.xml')).read()).hexdigest()
-            self._save_file(m, file=os.path.join('zips','addons.xml.md5'))
-        except Exception, e:
-            print "An error occurred creating addons.xml.md5 file!\n%s" % (e)
+        #try:
+            m = hashlib.md5()
+            with open(os.path.join('zips','addons.xml'), "rb") as f:
+                for chunk in iter(lambda: f.read(4096), b""):
+                    m.update(chunk)
+            self._save_file(m.hexdigest(), file=os.path.join('zips','addons.xml.md5'))
+        #except Exception as e:
+        #    print("An error occurred creating addons.xml.md5 file!\n%s" % (e))
 
     def _save_file(self,data,file):
-        try:
+        #try:
             open(file, 'w').write(data)
-        except Exception, e:
-            print "An error occurred saving %s file!\n%s" % (file,e)
+        #except Exception as e:
+        #    print("An error occurred saving %s file!\n%s" % (file,e))
 
 
 if ( __name__ == "__main__" ):
